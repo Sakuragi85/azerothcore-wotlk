@@ -1582,6 +1582,11 @@ void Pet::_SaveSpells(CharacterDatabaseTransaction trans)
 
                 break;
             case PETSPELL_NEW:
+                stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PET_SPELL_BY_SPELL);
+                stmt->SetData(0, m_charmInfo->GetPetNumber());
+                stmt->SetData(1, itr->first);
+                trans->Append(stmt);
+                
                 stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_PET_SPELL);
                 stmt->SetData(0, m_charmInfo->GetPetNumber());
                 stmt->SetData(1, itr->first);
@@ -1954,12 +1959,12 @@ bool Pet::unlearnSpell(uint32 spell_id, bool learn_prev, bool clear_ab)
 {
     if (removeSpell(spell_id, learn_prev, clear_ab))
     {
-        if (!m_loading)
+        /* if (!m_loading)
         {
             WorldPackets::Pet::PetUnlearnedSpell packet;
             packet.SpellID = spell_id;
             m_owner->SendDirectMessage(packet.Write());
-        }
+        } */
 
         return true;
     }
