@@ -1399,7 +1399,7 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
         m_spawnId = sObjectMgr->GenerateCreatureSpawnId();
 
     CreatureData& data = sObjectMgr->NewOrExistCreatureData(m_spawnId);
-    data.spawnId = m_spawnId;
+    data.spawnId = m_spawnId;  // mod_playerbots
     uint32 displayId = GetNativeDisplayId();
     uint32 npcflag = GetNpcFlags();
     uint32 unit_flags = GetUnitFlags();
@@ -3009,47 +3009,27 @@ void Creature::AddSpellCooldown(uint32 spell_id, uint32 /*itemid*/, uint32 end_t
     }
 
     SpellCategoryStore::const_iterator i_scstore = sSpellsByCategoryStore.find(categoryId);
-    bool const hasCategoryCooldown = categorycooldown && i_scstore != sSpellsByCategoryStore.end();
-    if (hasCategoryCooldown)
+    if (categorycooldown && i_scstore != sSpellsByCategoryStore.end())
     {
-        for (auto const& [itemBased, categorySpellId] : i_scstore->second)
+        for (SpellCategorySet::const_iterator i_scset = i_scstore->second.begin(); i_scset != i_scstore->second.end(); ++i_scset)
         {
-            // A longer cooldown still running on a category spell is never shortened
-            if (GetSpellCooldown(categorySpellId) > categorycooldown)
-                continue;
-
-            _AddCreatureSpellCooldown(categorySpellId, categoryId, categorycooldown);
+            _AddCreatureSpellCooldown(i_scset->second, categoryId, categorycooldown);
         }
     }
-
-    // The cast spell keeps its own recovery time when it outlasts the category cooldown
-    if (spellcooldown > categorycooldown)
+    else if (spellcooldown)
+    {
         _AddCreatureSpellCooldown(spellInfo->Id, 0, spellcooldown);
-
-    // The controlling player only learns creature cooldowns from us, category spells included
-    Player* player = GetCharmerOrOwnerPlayerOrPlayerItself();
-    if (!player)
-        return;
-
-    PacketCooldowns cooldowns;
-    if (hasCategoryCooldown)
-    {
-        for (auto const& [itemBased, categorySpellId] : i_scstore->second)
-        {
-            if (HasSpell(categorySpellId))
-                cooldowns[categorySpellId] = GetSpellCooldown(categorySpellId);
-        }
     }
 
-    if (uint32 remaining = GetSpellCooldown(spellInfo->Id))
-        cooldowns[spellInfo->Id] = remaining;
-
-    if (cooldowns.empty())
-        return;
-
-    WorldPacket data;
-    BuildCooldownPacket(data, SPELL_COOLDOWN_FLAG_NONE, cooldowns);
-    player->SendDirectMessage(&data);
+    if (sSpellMgr->HasSpellCooldownOverride(spellInfo->Id))
+    {
+        if (IsCharmed() && GetCharmer()->IsPlayer())
+        {
+            WorldPacket data;
+            BuildCooldownPacket(data, SPELL_COOLDOWN_FLAG_NONE, spellInfo->Id, spellcooldown);
+            GetCharmer()->ToPlayer()->SendDirectMessage(&data);
+        }
+    }
 }
 
 uint32 Creature::GetSpellCooldown(uint32 spell_id) const

@@ -145,8 +145,7 @@ struct boss_bjarngrim : public npc_escortAI
             if (Creature* dwarf = me->SummonCreature(NPC_STORMFORGED_LIEUTENANT, me->GetPositionX() + urand(4, 12), me->GetPositionY() + urand(4, 12), me->GetPositionZ()))
             {
                 float angle = i == 0 ? 2.5f : 3.78f;
-                // Keep following as the default movement when chase/evade movement ends.
-                dwarf->GetMotionMaster()->MoveFollow(me, 3, angle, MOTION_SLOT_IDLE);
+                dwarf->GetMotionMaster()->MoveFollow(me, 3, angle);
                 summons.Summon(dwarf);
             }
 
@@ -407,8 +406,6 @@ struct npc_stormforged_lieutenant : public ScriptedAI
 
     void Reset() override
     {
-        events.Reset();
-
         if (me->IsSummon())
             BjarngrimGUID = me->ToTempSummon()->GetSummonerGUID();
         else

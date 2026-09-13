@@ -25,7 +25,6 @@ add_executable(
 
 target_link_libraries(
         unit_tests
-        acore-core-interface
         game
         gtest_main
         gmock_main

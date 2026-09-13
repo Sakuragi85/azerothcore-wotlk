@@ -30,8 +30,7 @@ enum DataTypes
 
     DATA_CHANNELER_COMBAT           = 10,
     DATA_ACTIVATE_CUBES             = 11,
-    DATA_COLLAPSE                   = 12,
-    DATA_MAGTHERIDON_RELEASED       = 13
+    DATA_COLLAPSE                   = 12
 };
 
 enum NpcIds
@@ -47,8 +46,7 @@ enum NpcIds
 enum MagtheridonActions
 {
     ACTION_RELEASE_MAGTHERIDON      = 1,
-    ACTION_BANISH_SELF              = 2,
-    ACTION_RESET_ENCOUNTER          = 3
+    ACTION_BANISH_SELF              = 2
 };
 
 enum GoIds

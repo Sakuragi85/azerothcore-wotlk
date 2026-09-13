@@ -146,10 +146,7 @@ public:
                     else
                         player->learnSpell(trainerSpell.SpellId, false);
 
-                    // a script can refuse the learn or force the spell's state, so only go around
-                    // again when the spell actually stopped being teachable
-                    if (!trainer->CanTeachSpell(player, &trainerSpell))
-                        hadNew = true;
+                    hadNew = true;
                 }
             }
         } while (hadNew);

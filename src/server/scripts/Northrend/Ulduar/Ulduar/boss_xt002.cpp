@@ -744,8 +744,7 @@ class spell_xt002_searing_light_spawn_life_spark : public AuraScript
     {
         if (Player* player = GetOwner()->ToPlayer())
             if (Unit* xt002 = GetCaster())
-                // Heartbreak (hard mode) is death-persistent, so without this a corpse still summons
-                if (xt002->IsAlive() && xt002->HasAura(aurEff->GetAmount()))
+                if (xt002->HasAura(aurEff->GetAmount()))   // Heartbreak aura indicating hard mode
                     xt002->CastSpell(player, SPELL_SUMMON_LIFE_SPARK, true);
     }
 
@@ -769,8 +768,7 @@ class spell_xt002_gravity_bomb_aura : public AuraScript
     {
         if (Player* player = GetOwner()->ToPlayer())
             if (Unit* xt002 = GetCaster())
-                // Heartbreak (hard mode) is death-persistent, so without this a corpse still summons
-                if (xt002->IsAlive() && xt002->HasAura(aurEff->GetAmount()))
+                if (xt002->HasAura(aurEff->GetAmount()))   // Heartbreak aura indicating hard mode
                     xt002->CastSpell(player, SPELL_SUMMON_VOID_ZONE, true);
     }
 

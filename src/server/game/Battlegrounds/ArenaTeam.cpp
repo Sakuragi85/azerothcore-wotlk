@@ -137,6 +137,8 @@ bool ArenaTeam::AddMember(ObjectGuid playerGuid)
     else if (GetRating() >= 1000)
         personalRating = 1000;
 
+    sScriptMgr->OnGetStartPersonalRating(this, playerGuid, personalRating);
+
     // xinef: sync query
     // Try to get player's match maker rating from db and fall back to config setting if not found
     CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_MATCH_MAKER_RATING);
@@ -175,8 +177,6 @@ bool ArenaTeam::AddMember(ObjectGuid playerGuid)
     newMember.MatchMakerRating = matchMakerRating;
     newMember.MaxMMR           = maxMMR;
 
-    sScriptMgr->OnAddMember(this, newMember);
-
     Members.push_back(newMember);
     sCharacterCache->UpdateCharacterArenaTeamId(playerGuid, GetSlot(), GetId());
 
@@ -184,11 +184,7 @@ bool ArenaTeam::AddMember(ObjectGuid playerGuid)
     stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_ARENA_TEAM_MEMBER);
     stmt->SetData(0, TeamId);
     stmt->SetData(1, playerGuid.GetCounter());
-    stmt->SetData(2, newMember.WeekGames);
-    stmt->SetData(3, newMember.WeekWins);
-    stmt->SetData(4, newMember.SeasonGames);
-    stmt->SetData(5, newMember.SeasonWins);
-    stmt->SetData(6, newMember.PersonalRating);
+    stmt->SetData(2, personalRating);
     CharacterDatabase.Execute(stmt);
 
     // Inform player if online

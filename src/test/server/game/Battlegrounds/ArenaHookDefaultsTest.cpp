@@ -92,27 +92,14 @@ TEST_F(ArenaHookDefaultsTest, CanSaveArenaStatsForMemberDefaultsTrue)
     EXPECT_TRUE(sScriptMgr->CanSaveArenaStatsForMember(&team, ObjectGuid::Empty));
 }
 
-// OnAddMember must leave the member untouched by default so a new arena team
-// member keeps the rating and counters ArenaTeam::AddMember built for them,
-// which are also what is written to arena_team_member.
-TEST_F(ArenaHookDefaultsTest, OnAddMemberLeavesMemberUntouched)
+// OnGetStartPersonalRating must leave the rating untouched by default so a new
+// arena team member keeps the value ArenaTeam::AddMember computed for them.
+TEST_F(ArenaHookDefaultsTest, OnGetStartPersonalRatingKeepsCoreValue)
 {
     ArenaTeam team;
-
-    ArenaTeamMember member{};
-    member.PersonalRating = 1000;
-    member.WeekGames      = 6;
-    member.WeekWins       = 3;
-    member.SeasonGames    = 40;
-    member.SeasonWins     = 22;
-
-    sScriptMgr->OnAddMember(&team, member);
-
-    EXPECT_EQ(member.PersonalRating, 1000u);
-    EXPECT_EQ(member.WeekGames, 6u);
-    EXPECT_EQ(member.WeekWins, 3u);
-    EXPECT_EQ(member.SeasonGames, 40u);
-    EXPECT_EQ(member.SeasonWins, 22u);
+    uint32 personalRating = 1000;
+    sScriptMgr->OnGetStartPersonalRating(&team, ObjectGuid::Empty, personalRating);
+    EXPECT_EQ(personalRating, 1000u);
 }
 
 // OnBeforeArenaCheckWinConditions must return true by default so

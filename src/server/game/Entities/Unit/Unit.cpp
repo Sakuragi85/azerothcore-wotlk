@@ -1110,13 +1110,15 @@ uint32 Unit::DealDamage(Unit* attacker, Unit* victim, uint32 damage, CleanDamage
             case BASE_ATTACK:
             case OFF_ATTACK:
                 {
-                    weaponSpeedHitFactor = attacker->GetRageWeaponSpeedHitFactor(cleanDamage->attackType);
+                    weaponSpeedHitFactor = uint32(attacker->GetAttackTime(cleanDamage->attackType) / 1000.0f * (cleanDamage->attackType == BASE_ATTACK ? 3.5f : 1.75f));
                     if (cleanDamage->hitOutCome == MELEE_HIT_CRIT)
                         weaponSpeedHitFactor *= 2;
 
                     attacker->RewardRage(rage_damage, weaponSpeedHitFactor, true);
                     break;
                 }
+            case RANGED_ATTACK:
+                break;
             default:
                 break;
         }
@@ -2079,7 +2081,7 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
             case BASE_ATTACK:
             case OFF_ATTACK:
             {
-                uint32 weaponSpeedHitFactor = GetRageWeaponSpeedHitFactor(damageInfo->attackType);
+                uint32 weaponSpeedHitFactor = uint32(GetAttackTime(damageInfo->attackType) / 1000.0f * (damageInfo->attackType == BASE_ATTACK ? 3.5f : 1.75f));
                 RewardRage(damageInfo->cleanDamage, weaponSpeedHitFactor, true);
                 break;
             }
@@ -2286,7 +2288,7 @@ uint32 Unit::CalcArmorReducedDamage(Unit const* attacker, Unit const* victim, co
     return uint32(std::ceil(std::max(damage * (1.0f - tmpvalue), 0.0f)));
 }
 
-float Unit::GetEffectiveResistChance(Unit const* owner, SpellSchoolMask schoolMask, Unit const* victim, SpellInfo const* spellInfo /*= nullptr*/, uint8 casterLevel /*= 0*/)
+float Unit::GetEffectiveResistChance(Unit const* owner, SpellSchoolMask schoolMask, Unit const* victim, SpellInfo const* spellInfo /*= nullptr*/)
 {
     float victimResistance = static_cast<float>(victim->GetResistance(schoolMask));
     if (owner)
@@ -2304,14 +2306,11 @@ float Unit::GetEffectiveResistChance(Unit const* owner, SpellSchoolMask schoolMa
     }
 
     victimResistance = std::max(victimResistance, 0.0f);
-    uint8 effectiveCasterLevel = owner ? owner->GetLevel() : casterLevel;
 
-    if (effectiveCasterLevel && (!spellInfo || !spellInfo->HasAttribute(SPELL_ATTR0_CU_BINARY_SPELL)))
-        victimResistance += std::max(static_cast<float>(victim->GetLevel() - effectiveCasterLevel) * 5.0f, 0.0f);
+    if (owner && (!spellInfo || !spellInfo->HasAttribute(SPELL_ATTR0_CU_BINARY_SPELL)))
+        victimResistance += std::max(static_cast<float>(victim->GetLevel() - owner->GetLevel()) * 5.0f, 0.0f);
 
-    // Per EJ research, the resistance constant is based on the caster's level. It should be equal
-    // to 400 for a level 80 caster and 506.5 for a level 83 caster (boss).
-    float level = static_cast<float>(effectiveCasterLevel ? effectiveCasterLevel : victim->GetLevel());
+    float level = static_cast<float>(victim->GetLevel());
     float resistanceConstant = 0.0f;
 
     if (level > 60.0f)
@@ -2324,7 +2323,7 @@ float Unit::GetEffectiveResistChance(Unit const* owner, SpellSchoolMask schoolMa
     return std::min(victimResistance / (victimResistance + resistanceConstant), 0.75f);
 }
 
-void Unit::CalcAbsorbResist(DamageInfo& dmgInfo, bool Splited, uint8 casterLevel /*= 0*/)
+void Unit::CalcAbsorbResist(DamageInfo& dmgInfo, bool Splited)
 {
     Unit* victim = dmgInfo.GetVictim();
     Unit* attacker = dmgInfo.GetAttacker();
@@ -2340,7 +2339,7 @@ void Unit::CalcAbsorbResist(DamageInfo& dmgInfo, bool Splited, uint8 casterLevel
     // Xinef: holy resistance exists for npcs
     if (!(schoolMask & SPELL_SCHOOL_MASK_NORMAL) && (!(schoolMask & SPELL_SCHOOL_MASK_HOLY) || victim->IsCreature()) && (!spellInfo || (!spellInfo->HasAttribute(SPELL_ATTR0_CU_BINARY_SPELL) && !spellInfo->HasAttribute(SPELL_ATTR4_NO_CAST_LOG))))
     {
-        float averageResist = Unit::GetEffectiveResistChance(attacker, schoolMask, victim, nullptr, casterLevel);
+        float averageResist = Unit::GetEffectiveResistChance(attacker, schoolMask, victim);
 
         float discreteResistProbability[11];
         for (uint32 i = 0; i < 11; ++i)
@@ -2570,7 +2569,7 @@ void Unit::CalcAbsorbResist(DamageInfo& dmgInfo, bool Splited, uint8 casterLevel
             }
             else
             {
-                Unit::CalcAbsorbResist(splittedDmgInfo, true, casterLevel);
+                Unit::CalcAbsorbResist(splittedDmgInfo, true);
                 Unit::DealDamageMods(caster, splitted, &splitted_absorb);
             }
 
@@ -2643,7 +2642,7 @@ void Unit::CalcAbsorbResist(DamageInfo& dmgInfo, bool Splited, uint8 casterLevel
             }
             else
             {
-                Unit::CalcAbsorbResist(splittedDmgInfo, true, casterLevel);
+                Unit::CalcAbsorbResist(splittedDmgInfo, true);
                 Unit::DealDamageMods(caster, splitted, &splitted_absorb);
             }
 
@@ -8177,7 +8176,8 @@ bool RedirectSpellEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
 
 Unit* Unit::GetMagicHitRedirectTarget(Unit* victim, SpellInfo const* spellInfo)
 {
-    if (!spellInfo->CanBeRedirectedBySpellMagnet())
+    // Patch 1.2 notes: Spell Reflection no longer reflects abilities
+    if (spellInfo->HasAttribute(SPELL_ATTR0_IS_ABILITY) || spellInfo->HasAttribute(SPELL_ATTR1_NO_REDIRECTION) || spellInfo->HasAttribute(SPELL_ATTR0_NO_IMMUNITIES))
         return victim;
 
     Unit::AuraEffectList const& magnetAuras = victim->GetAuraEffectsByType(SPELL_AURA_SPELL_MAGNET);
@@ -9898,9 +9898,8 @@ bool Unit::HasSchoolImmunityForMask(SpellSchoolMask schoolMask, Unit const* cast
     uint32 accumulatedMask = 0;
     for (auto const& [immunitySchoolMask, immunityAuraId] : m_spellImmune[IMMUNITY_SCHOOL])
     {
-        // Beneficial immunities may refresh themselves. Hostile ones (Cyclone, Banish)
-        // must still report immunity when cast again while their aura is active.
-        if (spellInfo && spellInfo->IsPositive() && immunityAuraId == spellInfo->Id)
+        // Skip the spell's own immunity entry
+        if (spellInfo && immunityAuraId == spellInfo->Id)
             continue;
 
         SpellInfo const* immuneSpellInfo = sSpellMgr->GetSpellInfo(immunityAuraId);
@@ -12622,8 +12621,9 @@ void Unit::CleanupBeforeRemoveFromMap(bool finalCleanup)
     if (IsInWorld()) // not in world and not being removed atm
         RemoveFromWorld();
 
-    // Abort pending events here: left to ~EventProcessor they run after m_spellMods is already
-    // destroyed, and cancelling a SpellEvent then hits freed memory in Player::RestoreSpellMods.
+    // Added for mod_playerbots crash fixes; cancel and remove pending events before aura/spellmod cleanup.
+    // Without this SpellEvent may be cancelled later during EventProcessor destruction after auras/spellmods 
+    // are already removed and leading to invalid access in Player::RestoreSpellMods on logout.
     m_Events.KillAllEvents(false);
 
     ASSERT(GetGUID());
