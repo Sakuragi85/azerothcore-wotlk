@@ -19,9 +19,19 @@
 #include "ScriptMgr.h"
 #include "ScriptMgrMacros.h"
 
-bool ScriptMgr::OnModuleDatabasesLoading()
+bool ScriptMgr::OnDatabasesLoading()
 {
-    CALL_ENABLED_BOOLEAN_HOOKS(DatabaseScript, DATABASEHOOK_ON_MODULE_DATABASES_LOADING, !script->OnModuleDatabasesLoading());
+    auto ret = IsValidBoolScript<DatabaseScript>([&](DatabaseScript* script)
+    {
+        return !script->OnDatabasesLoading();
+    });
+
+    if (ret && *ret)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 void ScriptMgr::OnAfterDatabasesLoaded(uint32 updateFlags)
@@ -34,29 +44,44 @@ void ScriptMgr::OnAfterDatabaseLoadCreatureTemplates(std::vector<CreatureTemplat
     CALL_ENABLED_HOOKS(DatabaseScript, DATABASEHOOK_ON_AFTER_DATABASE_LOAD_CREATURETEMPLATES, script->OnAfterDatabaseLoadCreatureTemplates(creatureTemplates));
 }
 
-void ScriptMgr::OnModuleDatabasesKeepAlive()
+void ScriptMgr::OnDatabasesKeepAlive()
 {
-    CALL_ENABLED_HOOKS(DatabaseScript, DATABASEHOOK_ON_MODULE_DATABASES_KEEPALIVE, script->OnModuleDatabasesKeepAlive());
+    ExecuteScript<DatabaseScript>([&](DatabaseScript* script)
+    {
+        script->OnDatabasesKeepAlive();
+    });
 }
 
-void ScriptMgr::OnModuleDatabasesClosing()
+void ScriptMgr::OnDatabasesClosing()
 {
-    CALL_ENABLED_HOOKS(DatabaseScript, DATABASEHOOK_ON_MODULE_DATABASES_CLOSING, script->OnModuleDatabasesClosing());
+    ExecuteScript<DatabaseScript>([&](DatabaseScript* script)
+    {
+        script->OnDatabasesClosing();
+    });
 }
 
 void ScriptMgr::OnDatabaseWarnAboutSyncQueries(bool apply)
 {
-    CALL_ENABLED_HOOKS(DatabaseScript, DATABASEHOOK_ON_DATABASE_WARN_ABOUT_SYNC_QUERIES, script->OnDatabaseWarnAboutSyncQueries(apply));
+    ExecuteScript<DatabaseScript>([&](DatabaseScript* script)
+    {
+        script->OnDatabaseWarnAboutSyncQueries(apply);
+    });
 }
 
 void ScriptMgr::OnDatabaseSelectIndexLogout(Player* player, uint32& statementIndex, uint32& statementParam)
 {
-    CALL_ENABLED_HOOKS(DatabaseScript, DATABASEHOOK_ON_DATABASE_SELECT_INDEX_LOGOUT, script->OnDatabaseSelectIndexLogout(player, statementIndex, statementParam));
+    ExecuteScript<DatabaseScript>([&](DatabaseScript* script)
+    {
+        script->OnDatabaseSelectIndexLogout(player, statementIndex, statementParam);
+    });
 }
 
-void ScriptMgr::OnDatabaseGetDBRevision(std::map<std::string, std::string>& revisions)
+void ScriptMgr::OnDatabaseGetDBRevision(std::string& revision)
 {
-    CALL_ENABLED_HOOKS(DatabaseScript, DATABASEHOOK_ON_DATABASE_GET_DB_REVISION, script->OnDatabaseGetDBRevision(revisions));
+    ExecuteScript<DatabaseScript>([&](DatabaseScript* script)
+    {
+        script->OnDatabaseGetDBRevision(revision);
+    });
 }
 
 DatabaseScript::DatabaseScript(char const* name, std::vector<uint16> enabledHooks)

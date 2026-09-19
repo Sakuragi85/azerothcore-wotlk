@@ -2,7 +2,7 @@
 name: generate-pr-description
 description: Generate the PR title and description from the current branch changes, following the repo's PR template.
 metadata:
-  version: "1.1"
+  version: "1.0"
 ---
 
 # Generate PR description
@@ -67,5 +67,3 @@ PR DESCRIPTION:
 <body>
 ```
 ~~~
-
-Remarks for the user go below the block, after a `----` line.
