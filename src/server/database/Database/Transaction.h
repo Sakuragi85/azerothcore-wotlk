@@ -31,7 +31,6 @@ class AC_DATABASE_API TransactionBase
 {
     friend class TransactionTask;
     friend class MySQLConnection;
-    friend class ModuleDatabasePool;
 
     template <typename T>
     friend class DatabaseWorkerPool;

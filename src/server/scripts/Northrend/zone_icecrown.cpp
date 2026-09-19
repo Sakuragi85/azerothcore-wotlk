@@ -1718,10 +1718,6 @@ enum BlessedBanner
     EVENT_WAVE_SPAWN                    = 7,
     EVENT_HALOF                         = 8,
     EVENT_ENDED                         = 9,
-
-    GROUP_WAVE_PLAGUEBRINGERS           = 0,
-    GROUP_WAVE_CAPTAINS                 = 1,
-    GROUP_WAVE_HALOF                    = 2,
 };
 
 Position const DalforsPos[3] =
@@ -1779,6 +1775,7 @@ public:
     {
         npc_blessed_bannerAI(Creature* creature) : ScriptedAI(creature), Summons(me)
         {
+            HalofSpawned = false;
             PhaseCount = 0;
             Summons.DespawnAll();
 
@@ -1786,6 +1783,8 @@ public:
         }
 
         EventMap events;
+
+        bool HalofSpawned;
 
         uint32 PhaseCount;
 
@@ -1811,8 +1810,17 @@ public:
         void JustSummoned(Creature* summon) override
         {
             Summons.Summon(summon);
-            if (summon->GetEntry() == NPC_HALOF_THE_DEATHBRINGER)
-                guidHalof = summon->GetGUID();
+            if (summon->GetEntry() == NPC_SCOURGE_DRUDGE || summon->GetEntry() == NPC_REANIMATED_CAPTAIN ||
+                summon->GetEntry() == NPC_HIDEOUS_PLAGUEBRINGER || summon->GetEntry() == NPC_HALOF_THE_DEATHBRINGER)
+            {
+                summon->SetHomePosition(DalforsPos[2]);
+                summon->SetReactState(REACT_PASSIVE);
+                summon->EngageWithTarget(me);
+                summon->m_Events.AddEventAtOffset([summon]()
+                {
+                    summon->SetReactState(REACT_AGGRESSIVE);
+                }, 2s);
+            }
         }
 
         void JustDied(Unit* /*killer*/) override
@@ -1965,7 +1973,17 @@ public:
                             if (Creature* LK = GetClosestCreatureWithEntry(me, NPC_LK, 100))
                                 LK->AI()->Talk(LK_TALK_3);
                         }
-                        me->SummonCreatureGroup(urand(GROUP_WAVE_PLAGUEBRINGERS, GROUP_WAVE_CAPTAINS));
+                        DoSummon(NPC_SCOURGE_DRUDGE, Mason3Pos[0]);
+                        if (urand(0, 1) == 0)
+                        {
+                            DoSummon(NPC_HIDEOUS_PLAGUEBRINGER, Mason1Pos[0]);
+                            DoSummon(NPC_HIDEOUS_PLAGUEBRINGER, Mason2Pos[0]);
+                        }
+                        else
+                        {
+                            DoSummon(NPC_REANIMATED_CAPTAIN, Mason1Pos[0]);
+                            DoSummon(NPC_REANIMATED_CAPTAIN, Mason2Pos[0]);
+                        }
 
                         PhaseCount++;
 
@@ -1979,7 +1997,13 @@ public:
                     {
                         if (Creature* LK = GetClosestCreatureWithEntry(me, NPC_LK, 100))
                             LK->AI()->Talk(LK_TALK_4);
-                        me->SummonCreatureGroup(GROUP_WAVE_HALOF);
+                        DoSummon(NPC_SCOURGE_DRUDGE, Mason1Pos[0]);
+                        DoSummon(NPC_SCOURGE_DRUDGE, Mason2Pos[0]);
+                        if (Creature* tempsum = DoSummon(NPC_HALOF_THE_DEATHBRINGER, DalforsPos[0]))
+                        {
+                            HalofSpawned = true;
+                            guidHalof = tempsum->GetGUID();
+                        }
                     }
                     break;
                 case EVENT_ENDED:

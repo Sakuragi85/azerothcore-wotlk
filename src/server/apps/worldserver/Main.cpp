@@ -446,8 +446,10 @@ bool StartDB()
     if (!loader.Load())
         return false;
 
-    if (!sScriptMgr->OnModuleDatabasesLoading())
+    if (!sScriptMgr->OnDatabasesLoading())
+    {
         return false;
+    }
 
     ///- Get the realm Id from the configuration file
     realm.Id.Realm = sConfigMgr->GetOption<uint32>("RealmID", 1);
@@ -497,7 +499,7 @@ void StopDB()
     WorldDatabase.Close();
     LoginDatabase.Close();
 
-    sScriptMgr->OnModuleDatabasesClosing();
+    sScriptMgr->OnDatabasesClosing();
 
     MySQL::Library_End();
 }

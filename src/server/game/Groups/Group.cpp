@@ -1550,18 +1550,7 @@ void Group::EndRoll(Loot* pLoot)
     {
         if ((*itr)->getLoot() == pLoot)
         {
-            Roll* roll = *itr;
-            for (auto& [playerGuid, vote] : roll->playerVote)
-            {
-                if (vote != NOT_EMITED_YET)
-                    continue;
-
-                vote = PASS;
-                ++roll->totalPass;
-                SendLootRoll(roll->itemGUID, playerGuid, 128, ROLL_PASS, *roll);
-            }
-
-            CountTheRoll(itr);
+            CountTheRoll(itr);           //i don't have to edit player votes, who didn't vote ... he will pass
             itr = RollId.begin();
         }
         else
@@ -1642,7 +1631,7 @@ void Group::CountTheRoll(Rolls::iterator rollI)
 
             if (maxguid) // pussywizard: added condition
             {
-                SendLootRollWon(roll->itemGUID, maxguid, maxresul, ROLL_NEED, *roll);
+                SendLootRollWon(ObjectGuid::Empty, maxguid, maxresul, ROLL_NEED, *roll);
                 player = ObjectAccessor::FindPlayer(maxguid);
 
                 if (player)
@@ -1723,7 +1712,7 @@ void Group::CountTheRoll(Rolls::iterator rollI)
 
             if (maxguid) // pussywizard: added condition
             {
-                SendLootRollWon(roll->itemGUID, maxguid, maxresul, rollvote, *roll);
+                SendLootRollWon(ObjectGuid::Empty, maxguid, maxresul, rollvote, *roll);
                 player = ObjectAccessor::FindPlayer(maxguid);
 
                 if (player)

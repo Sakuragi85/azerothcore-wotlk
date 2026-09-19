@@ -15,35 +15,34 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "Group.h"
+#include "Player.h"
+#include "ScriptedCreature.h"
 #include "SpellScript.h"
 #include "SpellScriptLoader.h"
-#include "Unit.h"
 
-enum GordunniTrapSpells
+enum GordunniTrap
 {
-    SPELL_GORDUNNI_DIRT_MOUND_CHEST = 11756,
-    SPELL_GORDUNNI_DIRT_MOUND_JUNK  = 19394
+    GO_GORDUNNI_DIRT_MOUND = 144064,
 };
 
-// 19395 - Gordunni Trap
 class spell_gordunni_trap : public SpellScript
 {
     PrepareSpellScript(spell_gordunni_trap);
 
-    bool Validate(SpellInfo const* /*spellInfo*/) override
+    void HandleDummy()
     {
-        return ValidateSpellInfo({ SPELL_GORDUNNI_DIRT_MOUND_CHEST, SPELL_GORDUNNI_DIRT_MOUND_JUNK });
-    }
-
-    void HandleDummy(SpellEffIndex /*effIndex*/)
-    {
-        Unit* target = GetHitUnit();
-        target->CastSpell(target, urand(0, 1) ? SPELL_GORDUNNI_DIRT_MOUND_CHEST : SPELL_GORDUNNI_DIRT_MOUND_JUNK);
+        if (Unit* caster = GetCaster())
+            if (GameObject* chest = caster->SummonGameObject(GO_GORDUNNI_DIRT_MOUND, caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ(), 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0))
+            {
+                chest->SetSpellId(GetSpellInfo()->Id);
+                caster->RemoveGameObject(chest, false);
+            }
     }
 
     void Register() override
     {
-        OnEffectHitTarget += SpellEffectFn(spell_gordunni_trap::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+        OnCast += SpellCastFn(spell_gordunni_trap::HandleDummy);
     }
 };
 

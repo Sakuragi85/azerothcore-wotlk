@@ -207,6 +207,7 @@ struct boss_flame_leviathan : public BossAI
     uint8 _overloadCircuitCount;
 
     // Custom
+    void BindPlayers();
     void RadioSay(uint8 textid);
     void ActivateTowers();
     void TurnGates(bool _start, bool _death);
@@ -277,6 +278,7 @@ struct boss_flame_leviathan : public BossAI
         ActivateTowers();
         instance->SetBossState(BOSS_LEVIATHAN, SPECIAL);
 
+        BindPlayers();
         me->SetInCombatWithZone();
 
         if (!_startTimer)
@@ -480,6 +482,11 @@ struct boss_flame_leviathan : public BossAI
     }
 };
 
+void boss_flame_leviathan::BindPlayers()
+{
+    me->GetMap()->ToInstanceMap()->PermBindAllPlayers();
+}
+
 void boss_flame_leviathan::RadioSay(uint8 textid)
 {
     if (Creature* r = me->SummonCreature(NPC_BRANN_RADIO, me->GetPositionX() - 150, me->GetPositionY(), me->GetPositionZ(), me->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, 5000))
@@ -648,6 +655,7 @@ void boss_flame_leviathan::JustDied(Unit*)
     Talk(FLAME_LEVIATHAN_SAY_DEATH);
 
     TurnGates(false, true);
+    BindPlayers();
 }
 
 void boss_flame_leviathan::KilledUnit(Unit* who)
@@ -939,14 +947,7 @@ struct npc_freya_ward_summon : public ScriptedAI
 
     void IsSummonedBy(WorldObject* /*summoner*/) override
     {
-        // Deferred a tick on purpose: Spell::EffectSummonType re-applies the summon spell's own
-        // duration (10s for the lashers, 3s for the wards) once the summon call returns, which
-        // would overwrite anything this hook sets.
-        me->m_Events.AddEventAtOffset([this]()
-        {
-            me->ToTempSummon()->SetTempSummonType(TEMPSUMMON_MANUAL_DESPAWN);
-        }, 1ms);
-
+        me->ToTempSummon()->SetTempSummonType(TEMPSUMMON_MANUAL_DESPAWN);
         DoZoneInCombat();
     }
 

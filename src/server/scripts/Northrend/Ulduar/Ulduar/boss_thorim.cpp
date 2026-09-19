@@ -552,9 +552,7 @@ struct boss_thorim : public BossAI
                 me->AddThreat(player, 1000.0f);
         }
 
-        // The hook also fires with zero damage on an already despawned Thorim (damage shields after
-        // his own lethal melee during the HARD_RESET evade), where 0 >= 0 would count as a defeat
-        if (me->IsAlive() && damage >= me->GetHealth())
+        if (damage >= me->GetHealth()|| me->GetHealth()<2)
         {
             damage = 0;
             if (!_encounterFinished)

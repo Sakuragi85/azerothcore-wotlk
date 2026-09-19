@@ -20,7 +20,6 @@
 #include "Player.h"
 #include "ScriptedCreature.h"
 #include "ScriptedEscortAI.h"
-#include "TaskScheduler.h"
 
 /*######
 # npc_kservant
@@ -155,31 +154,11 @@ public:
             if (player && player->GetQuestStatus(10211) == QUEST_STATUS_INCOMPLETE)
             {
                 me->SetWalk(true);
-                Start(false, player->GetGUID());
-
-                // SummonGuardian installs follow movement after IsSummonedBy returns, so remove it on the next update.
-                scheduler.Schedule(1ms, [this](TaskContext /*task*/)
-                {
-                    if (me->GetMotionMaster()->GetMotionSlotType(MOTION_SLOT_ACTIVE) == FOLLOW_MOTION_TYPE)
-                    {
-                        me->GetMotionMaster()->MovementExpiredOnSlot(MOTION_SLOT_ACTIVE);
-                        // Follow finalization clears movement state without stopping its spline.
-                        me->StopMoving();
-                    }
-                });
+                Start(false, summoner->GetGUID());
             }
         }
 
-        void UpdateAI(uint32 diff) override
-        {
-            scheduler.Update(diff);
-            npc_escortAI::UpdateAI(diff);
-        }
-
-        void Reset() override
-        {
-            scheduler.CancelAll();
-        }
+        void Reset() override { }
     };
 };
 

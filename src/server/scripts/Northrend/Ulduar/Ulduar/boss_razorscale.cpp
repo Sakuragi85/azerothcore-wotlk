@@ -299,9 +299,7 @@ struct boss_razorscale : public BossAI
                 me->SetDisableGravity(false);
                 me->RemoveAura(SPELL_STUN_SELF);
                 Talk(EMOTE_PERMA_GROUND);
-                // A queued take-off means the harpoon phase finale already knocked the raid back
-                if (!events.HasTimeUntilEvent(EVENT_RESUME_AIR))
-                    DoCastSelf(SPELL_WING_BUFFET);
+                DoCastSelf(SPELL_WING_BUFFET);
                 {
                     EntryCheckPredicate trapperPred(NPC_EXPEDITION_TRAPPER);
                     summons.DoAction(ACTION_STOP_CONTROLLERS, trapperPred);
@@ -393,10 +391,7 @@ struct boss_razorscale : public BossAI
         {
             _permaGround = true;
             me->SetReactState(REACT_AGGRESSIVE);
-            // Wing Buffet is a 35 yard sphere measured in 3D, so it misses the floor while she is
-            // still descending; the landing point runs the transition in that case
-            if (!me->IsFlying())
-                DoAction(ACTION_START_PERMA_GROUND);
+            DoAction(ACTION_START_PERMA_GROUND);
         }
     }
 
